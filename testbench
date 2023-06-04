@@ -1,0 +1,69 @@
+library IEEE;
+use IEEE.std_logic_1164.all;
+use ieee.math_real.all;
+use ieee.numeric_std.all;
+use IEEE.std_logic_textio.all;
+use std.textio.all;
+
+entity testbench is
+end testbench;
+
+architecture tb of testbench is
+signal a, b: std_logic_vector(31 downto 0);
+signal Saida : std_logic_vector (13 DOWNTO 0);
+signal ck, reset, iniciar, ler, pronto: std_logic;
+signal endereco: std_logic_vector (3 downto 0);
+
+constant pc: time := 5 ns;
+CONSTANT passo : TIME := 30 ns;
+
+begin
+
+-- Connect DUV
+DUV: entity work.usertop
+port map(a,b, saida, ck, reset, iniciar, ler, pronto, endereco);
+
+stim: process is
+file arquivo_de_estimulos : text open read_mode is "C:\Users\brunn\OneDrive\Documentos\SadV3\estimulos.dat";
+variable linha_de_estimulos: line;
+variable espaco: character;
+variable valor_de_entrada_A: bit_vector(31 downto 0);
+variable valor_de_entrada_B: bit_vector(31 downto 0);
+variable valor_de_saida: bit_vector(13 downto 0);
+begin
+
+while not endfile(arquivo_de_estimulos) loop
+-- read inputs
+readline(arquivo_de_estimulos, linha_de_estimulos);
+read(linha_de_estimulos, valor_de_entrada_A);
+a <= to_stdlogicvector (valor_de_entrada_A);
+read(linha_de_estimulos, espaco);
+readline(arquivo_de_estimulos, linha_de_estimulos);
+read(linha_de_estimulos, valor_de_entrada_B);
+b <= to_stdlogicvector (valor_de_entrada_B);
+wait for passo;
+read(linha_de_estimulos, valor_de_saida);
+wait for passo;
+assert (saida = to_stdlogicvector(valor_de_saida))
+report
+"Falha na simulacao. "
+severity error;
+end loop;
+
+wait for passo;
+assert false report "Test done." severity note;
+wait;
+end process;
+
+process
+ begin
+ bambole: for i in 0 to 200 loop 
+ ck <= '1';
+wait for pc;
+ ck <= '0';
+ wait for pc;
+ end loop bambole;
+ end process;
+ 
+ 
+end tb;
